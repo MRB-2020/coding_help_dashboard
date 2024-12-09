@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.env
+*.ipynb_checkpoints/
+code_agents_venv/.openai_key
+.openai_key
