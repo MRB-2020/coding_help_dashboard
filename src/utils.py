@@ -55,17 +55,6 @@ def configure_overview() -> None:
     st.write("Welcome! This dashboard helps you with Python, R, and SQL tasks.")
     st.write("Select your preferences and let the assistant guide you!")
 
-def save_api_key_to_file(api_key: str, file_path=".openai_key") -> None:
-    """Save the OpenAI API key to a file."""
-    with open(file_path, "w") as file:
-        file.write(api_key)
-
-def load_api_key_from_file(file_path=".openai_key") -> str:
-    """Load the OpenAI API key from a file."""
-    if os.path.exists(file_path):
-        with open(file_path, "r") as file:
-            return file.read().strip()
-    return ""
 
 
 def configure_openai_api_key() -> None:
@@ -73,22 +62,14 @@ def configure_openai_api_key() -> None:
     st.sidebar.subheader("API Configuration")
     st.sidebar.write("Please enter your OpenAI API key to enable AI-powered features.")
 
-    # Load saved key if available
-    if "openai_api_key" not in st.session_state:
-        saved_key = load_api_key_from_file()
-        if saved_key:
-            st.session_state["openai_api_key"] = saved_key
-            st.sidebar.info("Loaded saved API key.")
-
     # Input for the API key
     openai_api_key = st.sidebar.text_input("OpenAI API Key", type="password")
-    
+
     if openai_api_key:
         st.session_state["openai_api_key"] = openai_api_key
-        save_api_key_to_file(openai_api_key)
-        st.sidebar.success("API key saved!")
-    elif "openai_api_key" in st.session_state:
-        st.sidebar.info("Using the previously saved API key.")
+        st.sidebar.success("API key set for this session.")
+    else:
+        st.sidebar.warning("Please enter your OpenAI API key.")
         
 
 
