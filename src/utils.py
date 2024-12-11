@@ -75,7 +75,7 @@ def configure_openai_api_key() -> None:
 
 def configure_available_options() -> None:
     """Add interactive elements like language selection and goals to the sidebar."""
-    st.sidebar.subheader("Configure Your Task")
+    st.sidebar.subheader("Configure Your Preference")
     
     # Extract model IDs for the dropdown menu
     model_choices = [f"{model['id']} - {model['description']}" for model in AVAILABLE_MODELS]
@@ -89,20 +89,77 @@ def configure_available_options() -> None:
     # Return the selected values
     return model_id, language, goal, output_format
 
-def configure_query_input(model: str ,language: str, goal: str, output_format: str) -> None:
-    """Display the query input box on the main page and generate a response."""
-    st.subheader("Enter Your Task")
-    query = st.text_area(
-        "Describe your coding task or question:",
-        placeholder="E.g., Write a Python function for calculating Fibonacci numbers.",
-        height=300  # Adjust height for better usability
+def configure_clear_history():
+    """Clear the chat history."""
+    
+    # Input for the Clear history key
+    clear_history = st.sidebar.button("Clear Chat History")
+    if clear_history:
+        st.session_state["chat_history"] = []
+
+        
+def configure_chat(model: str, language: str, goal: str, output_format: str) -> None:
+    """Interactive chat interface using st.chat_message."""
+    st.subheader("Chat with Coding Assistant")
+
+    # Check if chat history exists in the session state
+    if "chat_history" not in st.session_state:
+        st.session_state["chat_history"] = []  # Initialize chat history
+
+    # Display existing chat messages
+    for message in st.session_state["chat_history"]:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    # Get user input from the chat input box
+    if prompt := st.chat_input("Describe your coding task or question:"):
+        # Add user message to chat history
+        st.session_state["chat_history"].append({"role": "user", "content": prompt})
+
+        # Display user message immediately
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        # Generate a response using OpenAI
+        if "openai_api_key" in st.session_state and st.session_state["openai_api_key"]:
+            api_key = st.session_state["openai_api_key"]
+            response = generate_openai_response(
+                api_key=api_key,
+                query=prompt,
+                language=language,
+                goal=goal,
+                output_format=output_format,
+                model=model,
+            )
+            
+            # Add assistant response to chat history
+            st.session_state["chat_history"].append({"role": "assistant", "content": response})
+
+            # Display assistant response
+            with st.chat_message("assistant"):
+                st.markdown(response)
+        else:
+            # Warn the user if API key is missing
+            with st.chat_message("assistant"):
+                st.markdown("Please configure your OpenAI API key in the sidebar.")
+                
+                
+def add_custom_styles(sidebar_color="#4682B4", main_area_color="#D3D3D3"):
+    """Add custom styles to Streamlit app with dynamic colors."""
+    st.markdown(
+        f"""
+        <style>
+        /* Sidebar */
+        .css-1d391kg {{
+            background-color: {sidebar_color};
+        }}
+        /* Main content area */
+        .css-18e3th9 {{
+            background-color: {main_area_color};
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True
     )
 
-    # Ensure API key is available before allowing submission
-    if "openai_api_key" not in st.session_state or not st.session_state["openai_api_key"]:
-        st.warning("Please configure your OpenAI API key before submitting a task.")
-    elif st.button("Submit"):
-        api_key = st.session_state["openai_api_key"]
-        response = generate_openai_response(api_key= api_key, query=query, language=language, goal=goal, output_format=output_format,model=model)
-        st.subheader("Generated Response")
-        st.code(response, language.lower())
+    
